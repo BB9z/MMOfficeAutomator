@@ -1,4 +1,4 @@
-$config = Get-Content -Path .\config.json -Raw | ConvertFrom-Json
+﻿$config = Get-Content -Path .\config.json -Raw | ConvertFrom-Json
 
 if ($config.debug) {
     $DebugPreference = "Continue"
