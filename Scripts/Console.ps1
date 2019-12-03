@@ -33,6 +33,13 @@ class DConsole {
     static [void]info($input) {
         $input | Write-Host -ForegroundColor DarkGray
     }
+
+    static [void]ResetLastLine() {
+        $cTop = [System.Console]::CursorTop
+        [System.Console]::SetCursorPosition(0, $cTop - 1)
+        $cWidth = (Get-Host).UI.RawUI.BufferSize.Width
+        [System.Console]::Write("{0,-$cWidth}" -f " ")
+    }
 }
 
 function Write-Info {
