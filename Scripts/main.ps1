@@ -1,13 +1,11 @@
-﻿$config = Get-Content -Path .\config.json -Raw | ConvertFrom-Json
+﻿Set-StrictMode -Version 3.0
+$ErrorActionPreference = "Stop"
 
-if ($config.debug) {
-    $DebugPreference = "Continue"
-}
-else {
-    $DebugPreference = "SilentlyContinue"
-}
+$config = Get-Content -Path .\config.json -Raw | ConvertFrom-Json
+$DebugPreference = if ($config.debug) { "Continue" } else { "SilentlyContinue" }
 
-. "$PSScriptRoot/Log.ps1"
+. "$PSScriptRoot/Console.ps1"
+. "$PSScriptRoot/Workspace.ps1"
 
 foreach ($item in $config.organization_list) {
     Out-Info $item
