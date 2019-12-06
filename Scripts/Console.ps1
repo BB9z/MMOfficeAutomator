@@ -14,7 +14,7 @@ class DOut {
     Inspect object interface.
     #>
     static Inspect2($object) {
-        $object | Get-Member | Out-Host -Paging
+        $object | Get-Member | Out-Host
     }
 }
 

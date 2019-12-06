@@ -1,4 +1,4 @@
 ﻿{
-    "debug": true,
+    "debug": false,
     "organization_list": ["a", "b", "c"]
 }

@@ -11,10 +11,14 @@ $DebugPreference = if ($config.debug) { "Continue" } else { "SilentlyContinue" }
 Write-Debug "launcher"
 $Host.UI.RawUI.WindowTitle = "MMOffice"
 
+$work = [Workspace]::new((Get-Location))
+$work.OrganizationNames = $config.organization_list
+
 $menu = [DMenu]::new("菜单", @(
         @{ID = "1"; Title = "任务1" },
         @{ID = "2"; Title = "任务2" },
-        @{ID = "t"; Title = "测试" }
+        @{ID = "3"; Title = "文件归类到文件夹" }
+        @{ID = "4"; Title = "把文件夹中的文件移出来" }
         @{ID = "q"; Title = "退出" }
     ), "请选择")
 
@@ -28,6 +32,14 @@ while (!$shouldExit) {
         }
         '2' {
             Write-Host "task 2"
+            Pause
+        }
+        '3' {
+            $work.PackageFileStruct()
+            Pause
+        }
+        '4' {
+            $work.UnpackageFileStruct()
             Pause
         }
         'q' {
