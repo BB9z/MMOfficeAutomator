@@ -22,7 +22,7 @@ class Workspace {
         $total = 0
         foreach ($file in $documents + $folders) {
             if (!$file) { continue }
-            $oName = $this.OrganizationNameFromFileName($file.BaseName)
+            $oName = $this.OrganizationNameFromFile($file)
             if (!$oName) {
                 Write-Warning "  $($file.Name) 文件名不包括组织名，忽略"
                 continue
@@ -57,7 +57,7 @@ class Workspace {
         $folders = $this.FilterFolders(($this.Location | Get-ChildItem))
         foreach ($file in $documents + $folders) {
             if (!$file) { continue }
-            $oName = $this.OrganizationNameFromFileName($file.BaseName)
+            $oName = $this.OrganizationNameFromFile($file)
             if (!$oName) {
                 Write-Warning "  $($file.Name) 文件名不包括组织名，忽略"
                 continue
@@ -78,13 +78,13 @@ class Workspace {
         $folders = $this.FilterFolders(($this.Location | Get-ChildItem))
         $exsistFolderMap = @{ }
         foreach ($path in $folders) {
-            $oName = $this.OrganizationNameFromFileName($path.Name)
+            $oName = $this.OrganizationNameFromFile($path)
             if ($oName) {
                 $exsistFolderMap[$oName] = $path
             }
         }
         foreach ($file in $files) {
-            $oName = $this.OrganizationNameFromFileName($file.BaseName)
+            $oName = $this.OrganizationNameFromFile($file)
             if ($oName) {
                 $folder = $exsistFolderMap[$oName]
                 if (!$folder) {
@@ -104,7 +104,7 @@ class Workspace {
     [void]UnpackageFileStruct() {
         $folders = $this.FilterFolders(($this.Location | Get-ChildItem))
         foreach ($path in $folders) {
-            $oName = $this.OrganizationNameFromFileName($path.Name)
+            $oName = $this.OrganizationNameFromFile($path)
             if (!$oName) {
                 continue
             }
@@ -115,6 +115,95 @@ class Workspace {
             [DConsole]::info("  删除文件夹 $($path.Name)")
             Remove-Item $path -Recurse -Force
         }
+    }
+
+    [void]ReportStatistics() {
+        $statisticMap = @{ }
+        $files = $this.FilterDocumens(($this.Location | Get-ChildItem -Recurse))
+        Write-Host "文件统计，文档共计: $($files.Count)"
+        foreach ($file in $files) {
+            $oName = $this.OrganizationNameFromFile($file)
+            if (!$oName) {
+                Write-Warning "  $($file.Name) 文件名不包括组织名，忽略"
+                continue
+            }
+            $oInfo = $statisticMap[$oName]
+            if (!$oInfo) {
+                $oInfo = @{ }
+                $statisticMap[$oName] = $oInfo
+            }
+            switch ($file.Extension) {
+                { $_ -eq ".doc" -or $_ -eq ".docx" } {
+                    $oInfo.HasDoc = $true
+                }
+                { $_ -eq ".xls" -or $_ -eq ".xlsx" } {
+                    $oInfo.HasXls = $true
+                }
+                Default {
+                    $oInfo.HasOther = $true
+                    $oInfo.OtherCount += 1
+                }
+            }
+        }
+
+        $organizations = $this.OrganizationNames
+        $oCount = $organizations.Count
+        $noAnyOrgs = $organizations.Clone()
+        $noXlsOrgs = $organizations.Clone()
+        $hasXlsOrgs = @()
+        foreach ($oName in $statisticMap.Keys) {
+            $oInfo = $statisticMap[$oName]
+            $noAnyOrgs = $noAnyOrgs | Where-Object { $_ -ne $oName }
+            if ($oInfo.HasXls) {
+                $noXlsOrgs = $noAnyOrgs | Where-Object { $_ -ne $oName }
+                $hasXlsOrgs += $oName
+            }
+        }
+
+        if (!($noAnyOrgs.Count -eq 0)) {
+            Write-Host "`n无任何文件的组织有 $($noAnyOrgs.Count)家" -ForegroundColor "Red"
+            foreach ($oName in $noAnyOrgs) {
+                Write-Host "  $oName" -ForegroundColor DarkRed
+            }
+        }
+
+        if (!($noXlsOrgs.Count -eq 0)) {
+            Write-Host "`n$($hasXlsOrgs.Count) 家有报表，无报表 $($noXlsOrgs.Count) 家：" -ForegroundColor "Yellow"
+            foreach ($oName in $noXlsOrgs) {
+                Write-Host "  $oName" -ForegroundColor DarkRed
+            }
+        }
+        else {
+            Write-Host "`n报表全部已报" -ForegroundColor "Green"
+        }
+
+        Write-Host "`n详情："
+        foreach ($oName in $organizations) {
+            Write-Host "  $($oName)`t" -NoNewline
+            $oInfo = $statisticMap[$oName]
+            if (!$oInfo) {
+                Write-Host "无任何文件" -ForegroundColor "Red"
+                continue
+            }
+            if ($oInfo.HasXls) {
+                Write-Host "  有报表" -NoNewline -ForegroundColor "Green"
+            } else {
+                Write-Host "  无报表" -NoNewline -ForegroundColor "Yellow"
+            }
+            if ($oInfo.HasDoc) {
+                Write-Host "  有 Doc" -NoNewline -ForegroundColor "Blue"
+            } else {
+                Write-Host "  无 Doc" -NoNewline -ForegroundColor "Yellow"
+            }
+            if ($oInfo.HasOther) {
+                Write-Host "  其他文件 $($oInfo.OtherCount) 个"
+            }
+            else {
+                Write-Host ""
+            }
+        }
+
+        # [dout]::Inspect($statisticMap)
     }
 
     #region 工具
@@ -128,13 +217,14 @@ class Workspace {
 
     [FileSystemInfo[]]FilterDocumens([FileSystemInfo[]]$items) {
         return $items | Where-Object {
-            (!$_.PSIsContainer) -and ($this.DocumentExtensions.Contains($_.Extension))
+            (!$_.PSIsContainer) -and ($this.DocumentExtensions.Contains($_.Extension.ToLower()))
         }
     }
 
-    [string]OrganizationNameFromFileName([string]$FileName) {
+    [string]OrganizationNameFromFile([FileSystemInfo]$File) {
+        $name = $File.BaseName
         foreach ($item in $this.OrganizationNames) {
-            if ($FileName.Contains($item)) {
+            if ($name.Contains($item)) {
                 return $item
             }
         }

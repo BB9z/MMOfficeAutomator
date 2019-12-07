@@ -19,6 +19,7 @@ $menu = [DMenu]::new("菜单", @(
         @{ID = "2"; Title = "编号去除" },
         @{ID = "3"; Title = "文件归类到文件夹" }
         @{ID = "4"; Title = "把文件夹中的文件提取出来" }
+        @{ID = "5"; Title = "统计" }
         @{ID = "q"; Title = "退出" }
     ), "请选择")
 
@@ -40,6 +41,10 @@ while (!$shouldExit) {
         }
         '4' {
             $work.UnpackageFileStruct()
+            Pause
+        }
+        '5' {
+            $work.ReportStatistics()
             Pause
         }
         'q' {
