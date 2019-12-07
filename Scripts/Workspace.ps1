@@ -152,14 +152,14 @@ class Workspace {
         }
 
         $organizations = $this.OrganizationNames
-        $noAnyOrgs = $organizations.Clone()
-        $noXlsOrgs = $organizations.Clone()
+        $noAnyOrgs = [System.Collections.ArrayList]$organizations.Clone()
+        $noXlsOrgs = [System.Collections.ArrayList]$organizations.Clone()
         $hasXlsOrgs = @()
         foreach ($oName in $statisticMap.Keys) {
             $oInfo = $statisticMap[$oName]
-            $noAnyOrgs = $noAnyOrgs | Where-Object { $_ -ne $oName }
+            $noAnyOrgs.Remove($oName)
             if ($oInfo.HasXls) {
-                $noXlsOrgs = $noAnyOrgs | Where-Object { $_ -ne $oName }
+                $noXlsOrgs.Remove($oName)
                 $hasXlsOrgs += $oName
             }
         }
