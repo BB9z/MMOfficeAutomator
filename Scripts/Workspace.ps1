@@ -129,7 +129,12 @@ class Workspace {
             }
             $oInfo = $statisticMap[$oName]
             if (!$oInfo) {
-                $oInfo = @{ }
+                $oInfo = @{
+                    HasDoc = $false;
+                    HasXls = $false;
+                    HasOther = $false;
+                    OtherCount = 0;
+                }
                 $statisticMap[$oName] = $oInfo
             }
             switch ($file.Extension) {
@@ -147,7 +152,6 @@ class Workspace {
         }
 
         $organizations = $this.OrganizationNames
-        $oCount = $organizations.Count
         $noAnyOrgs = $organizations.Clone()
         $noXlsOrgs = $organizations.Clone()
         $hasXlsOrgs = @()
@@ -160,14 +164,14 @@ class Workspace {
             }
         }
 
-        if (!($noAnyOrgs.Count -eq 0)) {
+        if ($noAnyOrgs -and $noAnyOrgs.Count -gt 0) {
             Write-Host "`n无任何文件的组织有 $($noAnyOrgs.Count)家" -ForegroundColor "Red"
             foreach ($oName in $noAnyOrgs) {
                 Write-Host "  $oName" -ForegroundColor DarkRed
             }
         }
 
-        if (!($noXlsOrgs.Count -eq 0)) {
+        if ($noXlsOrgs -and $noXlsOrgs.Count -gt 0) {
             Write-Host "`n$($hasXlsOrgs.Count) 家有报表，无报表 $($noXlsOrgs.Count) 家：" -ForegroundColor "Yellow"
             foreach ($oName in $noXlsOrgs) {
                 Write-Host "  $oName" -ForegroundColor DarkRed
@@ -177,7 +181,7 @@ class Workspace {
             Write-Host "`n报表全部已报" -ForegroundColor "Green"
         }
 
-        Write-Host "`n详情："
+        Write-Host "`n$($organizations.Count) 家组织详情："
         foreach ($oName in $organizations) {
             Write-Host "  $($oName)`t" -NoNewline
             $oInfo = $statisticMap[$oName]
@@ -202,8 +206,6 @@ class Workspace {
                 Write-Host ""
             }
         }
-
-        # [dout]::Inspect($statisticMap)
     }
 
     #region 工具
