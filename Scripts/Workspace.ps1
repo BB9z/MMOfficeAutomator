@@ -15,6 +15,64 @@ class Workspace {
         $this.DocumentExtensions = @( ".doc", ".docx", ".xls", ".xlsx", ".pdf" )
     }
 
+    [void]AddNumber() {
+        $indexFromONameMap = @{ }
+        $documents = $this.FilterDocumens(($this.Location | Get-ChildItem))
+        $folders = $this.FilterFolders(($this.Location | Get-ChildItem))
+        $total = 0
+        foreach ($file in $documents + $folders) {
+            if (!$file) { continue }
+            $oName = $this.OrganizationNameFromFileName($file.BaseName)
+            if (!$oName) {
+                Write-Warning "  $($file.Name) 文件名不包括组织名，忽略"
+                continue
+            }
+            $index = $indexFromONameMap[$oName]
+            if (!$index) {
+                $index = ($total++) + 1
+                $indexFromONameMap[$oName] = $index
+            }
+            if ($file.Name -match "(?<number>\d+)\.*\s*(?<name>.+)") {
+                if ([int]$Matches.number -eq $index) {
+                    Write-Host "编号相同 $index"
+                    [DConsole]::info("  $($file.Name) 已编号")
+                }
+                else {
+                    Write-Host "编号不同"
+                    $newName = "$($index.ToString('00')). $($Matches.name)"
+                    [DConsole]::info(" 重新编号 $newName")
+                    Rename-Item -Path $file -NewName $newName
+                }
+            }
+            else {
+                $newName = "$($index.ToString('00')). $($file.Name)"
+                [DConsole]::info(" 编号 $newName")
+                Rename-Item -Path $file -NewName $newName
+            }
+        }
+    }
+
+    [void]RemoveNumber() {
+        $documents = $this.FilterDocumens(($this.Location | Get-ChildItem))
+        $folders = $this.FilterFolders(($this.Location | Get-ChildItem))
+        foreach ($file in $documents + $folders) {
+            if (!$file) { continue }
+            $oName = $this.OrganizationNameFromFileName($file.BaseName)
+            if (!$oName) {
+                Write-Warning "  $($file.Name) 文件名不包括组织名，忽略"
+                continue
+            }
+            if ($file.Name -match "(?<number>\d+)\.*\s*(?<name>.+)") {
+                $newName = $Matches.name
+                [DConsole]::info(" 去除编号 $($newName)")
+                Rename-Item -Path $file -NewName $newName
+            }
+            else {
+                [DConsole]::info(" 忽略 $($file.Name)")
+            }
+        }
+    }
+
     [void]PackageFileStruct() {
         $files = $this.FilterDocumens(($this.Location | Get-ChildItem))
         $folders = $this.FilterFolders(($this.Location | Get-ChildItem))
@@ -84,7 +142,3 @@ class Workspace {
     }
     #endregion
 }
-
-# $work = [Workspace]::new((Get-Location))
-# $work.OrganizationNames = @( "a", "b", "c" )
-# $work.PackageFileStruct()

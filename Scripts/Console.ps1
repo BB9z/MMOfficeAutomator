@@ -6,7 +6,7 @@ class DOut {
     #>
     static Inspect($object) {
         $object.GetType().FullName | Write-Host
-        Write-Host ($object | Format-List -Force | Out-String)
+        $object | Format-List -Force | Out-Host
     }
 
     <#
