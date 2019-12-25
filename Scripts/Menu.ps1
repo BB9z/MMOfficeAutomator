@@ -28,7 +28,7 @@ class DMenu {
         foreach ($item in $this.Items) {
             Write-Host " $($item.ID)" -NoNewline -ForegroundColor Yellow
             Write-Host ". " -NoNewline -ForegroundColor Gray
-            Write-Host "$($item.Title)" -ForegroundColor DarkGreen
+            Write-Host "$($item.Title)" -ForegroundColor Green
             $vaildInput += "$($item.ID)"
         }
 
