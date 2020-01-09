@@ -9,10 +9,12 @@ class Workspace {
     [ValidateNotNullOrEmpty()][Automation.PathInfo]$Location
     [ValidateNotNullOrEmpty()][string[]]$OrganizationNames
     [ValidateNotNullOrEmpty()][string[]]$DocumentExtensions
+    [ValidateNotNullOrEmpty()][string[]]$ExcelTypeExtensions
 
     Workspace([Automation.PathInfo]$Location) {
         $this.Location = $Location
-        $this.DocumentExtensions = @( ".doc", ".docx", ".xls", ".xlsx", ".pdf" )
+        $this.DocumentExtensions = @( ".doc", ".docx", ".xls", ".xlsx", ".et", ".pdf" )
+        $this.ExcelTypeExtensions = @( ".xls", ".xlsx", ".et" )
     }
 
     [void]AddNumber() {
@@ -32,7 +34,7 @@ class Workspace {
                 $index = ($total++) + 1
                 $indexFromONameMap[$oName] = $index
             }
-            if ($file.Name -match "(?<number>\d+)\.*\s*(?<name>.+)") {
+            if ($file.Name -match "^(?<number>\d+)\.*\s*(?<name>.+)") {
                 if ([int]$Matches.number -eq $index) {
                     Write-Host "编号相同 $index"
                     [DConsole]::info("  $($file.Name) 已编号")
@@ -141,7 +143,7 @@ class Workspace {
                 { $_ -eq ".doc" -or $_ -eq ".docx" } {
                     $oInfo.HasDoc = $true
                 }
-                { $_ -eq ".xls" -or $_ -eq ".xlsx" } {
+                { $this.ExcelTypeExtensions.Contains($_) } {
                     $oInfo.HasXls = $true
                 }
                 Default {
@@ -167,14 +169,14 @@ class Workspace {
         if ($noAnyOrgs -and $noAnyOrgs.Count -gt 0) {
             Write-Host "`n无任何文件的组织有 $($noAnyOrgs.Count)家" -ForegroundColor "Red"
             foreach ($oName in $noAnyOrgs) {
-                Write-Host "  $oName" -ForegroundColor DarkRed
+                Write-Host "  $oName" -ForegroundColor "Red"
             }
         }
 
         if ($noXlsOrgs -and $noXlsOrgs.Count -gt 0) {
             Write-Host "`n$($hasXlsOrgs.Count) 家有报表，无报表 $($noXlsOrgs.Count) 家：" -ForegroundColor "Yellow"
             foreach ($oName in $noXlsOrgs) {
-                Write-Host "  $oName" -ForegroundColor DarkRed
+                Write-Host "  $oName" -ForegroundColor "Red"
             }
         }
         else {
